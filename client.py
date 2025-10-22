@@ -9,6 +9,7 @@ The code follows the ds-sim protocol and is compatible with mark_client.py for a
 import sys
 import socket
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 
 # Helper data structures for server information and state
 class ServerInfo:
@@ -122,6 +123,52 @@ class ServerState:
         self.tasks.sort(key=lambda t: t['finish_time'])
         return finish_time
 
+# Utilities for ds-server query protocol (GETS ... -> DATA n)
+def parse_server_record(line: str):
+    parts = line.split()
+    # Expected format (per ds-client): type id state curStartTime cores mem disk
+    # Some versions omit curStartTime; fall back by shifting indices if needed
+    if len(parts) >= 7:
+        stype = parts[0]
+        sid = int(parts[1])
+        state = parts[2]
+        # Handle both formats: with and without curStartTime
+        if parts[3].isdigit() and len(parts) >= 8:
+            # With curStartTime, resources start at index 4
+            cores = int(parts[4])
+            mem = int(parts[5])
+            disk = int(parts[6])
+        else:
+            # Without curStartTime, resources start at index 3
+            cores = int(parts[3])
+            mem = int(parts[4])
+            disk = int(parts[5])
+        return {
+            'type': stype,
+            'id': sid,
+            'state': state,
+            'cores': cores,
+            'mem': mem,
+            'disk': disk,
+            'raw': line,
+        }
+    # Fallback minimal parse (type id ... cores mem disk at the end)
+    return None
+
+def recv_data_block(sock_file_obj, n: int):
+    # Acknowledge header
+    sock_file_obj.write(b"OK\n")
+    sock_file_obj.flush()
+    lines = []
+    for _ in range(n):
+        lines.append(sock_file_obj.readline().decode().strip())
+    # Acknowledge data
+    sock_file_obj.write(b"OK\n")
+    sock_file_obj.flush()
+    # Consume terminating '.'
+    sock_file_obj.readline()
+    return lines
+
 # Connect to ds-server (default localhost:50000)
 HOST, PORT = "127.0.0.1", 50000
 if len(sys.argv) > 1:
@@ -172,6 +219,7 @@ if response != "OK":
 # After AUTH, ds-server writes system info to ds-system.xml. Parse that file for server details.
 servers = []        # list of ServerInfo for each server instance (each with unique type+id)
 server_states = {}  # mapping (serverType, serverID) -> ServerState for dynamic tracking
+hourly_rate_by_type = {}  # server type -> hourly rate for tie-breaks
 try:
     tree = ET.parse("ds-system.xml")
     root = tree.getroot()
@@ -185,6 +233,7 @@ try:
         memory = int(s.get("memory") or 0)
         disk = int(s.get("disk") or 0)
         # Create ServerInfo and ServerState for each instance (id 0 to limit-1)
+        hourly_rate_by_type[stype] = hourly_rate
         for sid in range(limit):
             info = ServerInfo(stype, sid, cores, memory, disk, boot_time, hourly_rate)
             servers.append(info)
@@ -195,38 +244,112 @@ except Exception as e:
     servers = []
     server_states = {}
 
-# Helper function to choose a server for a given job using our scheduling heuristic
-def choose_server_for_job(job_id: int, submit_time: int, cores_req: int, mem_req: int, disk_req: int, est_runtime: int):
-    """Select the best server to schedule the given job (with requirements and estimated runtime)."""
-    best_server = None
-    earliest_finish = float('inf')
-    best_ready_time = None
+last_used_tick = defaultdict(lambda: -10**9)  # (type,id) -> last assignment tick
 
+def choose_server_for_job(job_id: int, submit_time: int, cores_req: int, mem_req: int, disk_req: int, est_runtime: int):
+    """Select the best server using GETS Avail/Capable + MCT with cost- and LRU-aware tie-breaks."""
+    # 1) Prefer READY (Avail) servers via GETS
+    send(f"GETS Avail {cores_req} {mem_req} {disk_req}")
+    header = recv()
+    avail_records = []
+    if header.startswith("DATA"):
+        try:
+            n = int(header.split()[1])
+        except Exception:
+            n = 0
+        if n > 0:
+            lines = recv_data_block(sock_file, n)
+            avail_records = [parse_server_record(l) for l in lines]
+        else:
+            # still need to complete the '.' handshake even for zero
+            sock_file.write(b"OK\n"); sock_file.flush(); sock_file.readline()
+    # Selection among Avail: best-fit cores then lower hourly rate then LRU
+    def cost_of(stype: str) -> float:
+        return hourly_rate_by_type.get(stype, 1e9)
+
+    def score_avail(rec):
+        # Smaller (cores - req) is better; tie by cost then older last_used
+        fit = rec['cores'] - cores_req
+        return (
+            (fit if fit >= 0 else 10**9),
+            cost_of(rec['type']),
+            last_used_tick[(rec['type'], rec['id'])]
+        )
+
+    chosen = None
+    if avail_records:
+        # Filter to those that can fit now
+        feasible = [r for r in avail_records if r and r['cores'] >= cores_req and r['mem'] >= mem_req and r['disk'] >= disk_req]
+        if feasible:
+            feasible.sort(key=score_avail)
+            r = feasible[0]
+            info = ServerInfo(r['type'], r['id'], r['cores'], r['mem'], r['disk'], 0, cost_of(r['type']))
+            server_states.setdefault((info.name, info.id), ServerState(info))
+            return info, submit_time
+
+    # 2) Otherwise, consider Capable servers and use MCT with our local state to predict
+    send(f"GETS Capable {cores_req} {mem_req} {disk_req}")
+    header = recv()
+    capable_records = []
+    if header.startswith("DATA"):
+        try:
+            n = int(header.split()[1])
+        except Exception:
+            n = 0
+        if n > 0:
+            lines = recv_data_block(sock_file, n)
+            capable_records = [parse_server_record(l) for l in lines]
+        else:
+            sock_file.write(b"OK\n"); sock_file.flush(); sock_file.readline()
+
+    best_server = None
+    best_ready_time = None
+    earliest_finish = float('inf')
     job_specs = (cores_req, mem_req, disk_req, est_runtime)
-    # Iterate through all servers capable of running the job (i.e., having capacity >= requirements)
-    for info in servers:
-        # Quick capability check: skip servers that by spec cannot handle the job's requirements
-        if info.cores < cores_req or info.memory < mem_req or info.disk < disk_req:
+    for r in capable_records:
+        if not r:
             continue
-        state = server_states[(info.name, info.id)]
-        # Predict when this server could start the job and when it would finish
+        # Ensure a ServerState exists with the capacity from system.xml if available, else from record
+        key = (r['type'], r['id'])
+        if key not in server_states:
+            # Look up from parsed system info for accurate boot time and hourly rate
+            boot = 0
+            hourly = hourly_rate_by_type.get(r['type'], 0.0)
+            info = ServerInfo(r['type'], r['id'], r['cores'], r['mem'], r['disk'], boot, hourly)
+            server_states[key] = ServerState(info)
+        state = server_states[key]
         ready_time, finish_time = state.predict_ready_time(job_specs, submit_time)
-        # Check if this finish time is the earliest seen so far
-        if finish_time < earliest_finish:
+        # Primary: earliest finish; tie: lower cost; secondary: older last-used to spread load
+        if (
+            finish_time < earliest_finish or
+            (
+                finish_time == earliest_finish and best_server is not None and
+                state.info.hourly_rate < best_server.hourly_rate
+            ) or (
+                finish_time == earliest_finish and best_server is not None and
+                state.info.hourly_rate == best_server.hourly_rate and
+                last_used_tick[key] < last_used_tick[(best_server.name, best_server.id)]
+            )
+        ):
             earliest_finish = finish_time
-            best_server = info
+            best_server = state.info
             best_ready_time = ready_time
-        elif finish_time == earliest_finish and best_server is not None:
-            # Tie-breaker: if finish time is equal, choose the server with lower cost (hourly rate)
-            if info.hourly_rate < best_server.hourly_rate:
-                best_server = info
-                best_ready_time = ready_time
-            # If cost is also equal, could tie-break by server cores or ID to have deterministic behavior (optional)
-    return best_server, best_ready_time
+
+    if best_server is not None:
+        return best_server, best_ready_time
+
+    # 3) Absolute fallback: pick the largest-core server from our catalog
+    fallback = None
+    for info in servers:
+        if info.cores >= cores_req and info.memory >= mem_req and info.disk >= disk_req:
+            if fallback is None or info.cores > fallback.cores:
+                fallback = info
+    return fallback, submit_time if fallback else (None, None)
 
 # Main scheduling loop
 send("REDY")
 current_time = 0  # track current simulation time
+tick = 0          # count of scheduled jobs for LRU
 while True:
     message = recv()
     if not message:
@@ -280,7 +403,11 @@ while True:
             send(f"ERR NoCapableServer for job {job_id}")
             continue
         # Schedule the job on the chosen server
-        finish_time = server_states[(server_info.name, server_info.id)].schedule_job(job_id, (cores_req, mem_req, disk_req, runtime), start_time)
+        finish_time = server_states[(server_info.name, server_info.id)].schedule_job(
+            job_id,
+            (cores_req, mem_req, disk_req, runtime),
+            start_time
+        )
         # Send SCHD (schedule) command to server: "SCHD jobID serverType serverID"
         send(f"SCHD {job_id} {server_info.name} {server_info.id}")
         # Expect an "OK" acknowledgment for the scheduling action
@@ -288,6 +415,8 @@ while True:
         if ack != "OK":
             print(f"Protocol warning: expected OK after SCHD, got '{ack}'", file=sys.stderr)
         # After scheduling, loop back to send REDY for the next event
+        last_used_tick[(server_info.name, server_info.id)] = tick
+        tick += 1
         send("REDY")
     elif parts[0] == "JCPL":
         # Job completion event: format "JCPL endTime jobID serverType serverID"
