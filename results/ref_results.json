@@ -1,0 +1,323 @@
+{
+  "Turnaround time": {
+    "config12-long-med.xml": {
+      "atl": 147455,
+      "ff": 2400,
+      "bf": 2397,
+      "fc": 116814,
+      "fafc": 2407
+    },
+    "config12-med-alt.xml": {
+      "atl": 114127,
+      "ff": 388,
+      "bf": 373,
+      "fc": 89658,
+      "fafc": 367
+    },
+    "config12-med-med.xml": {
+      "atl": 134044,
+      "ff": 654,
+      "bf": 653,
+      "fc": 110911,
+      "fafc": 653
+    },
+    "config12-short-med.xml": {
+      "atl": 19734,
+      "ff": 61,
+      "bf": 60,
+      "fc": 16015,
+      "fafc": 60
+    },
+    "config16-long-high.xml": {
+      "atl": 387463,
+      "ff": 3123,
+      "bf": 4674,
+      "fc": 615419,
+      "fafc": 2671
+    },
+    "config16-long-med.xml": {
+      "atl": 285173,
+      "ff": 2548,
+      "bf": 2562,
+      "fc": 457374,
+      "fafc": 2556
+    },
+    "config16-med-high.xml": {
+      "atl": 401672,
+      "ff": 3749,
+      "bf": 5328,
+      "fc": 609403,
+      "fafc": 1408
+    },
+    "config16-short-high.xml": {
+      "atl": 432141,
+      "ff": 3215,
+      "bf": 8260,
+      "fc": 587912,
+      "fafc": 991
+    },
+    "config16-short-med.xml": {
+      "atl": 349755,
+      "ff": 699,
+      "bf": 851,
+      "fc": 463824,
+      "fafc": 667
+    },
+    "config40-long-high.xml": {
+      "atl": 486141,
+      "ff": 4506,
+      "bf": 4164,
+      "fc": 489452,
+      "fafc": 3369
+    },
+    "config40-long-med.xml": {
+      "atl": 291104,
+      "ff": 3553,
+      "bf": 3553,
+      "fc": 268567,
+      "fafc": 3562
+    },
+    "config40-med-high.xml": {
+      "atl": 243024,
+      "ff": 1505,
+      "bf": 896,
+      "fc": 239755,
+      "fafc": 906
+    },
+    "config40-med-med.xml": {
+      "atl": 151107,
+      "ff": 941,
+      "bf": 941,
+      "fc": 141732,
+      "fafc": 941
+    },
+    "config40-short-high.xml": {
+      "atl": 264042,
+      "ff": 485,
+      "bf": 1365,
+      "fc": 220944,
+      "fafc": 228
+    },
+    "config40-short-med.xml": {
+      "atl": 187565,
+      "ff": 180,
+      "bf": 182,
+      "fc": 174394,
+      "fafc": 180
+    }
+  },
+  "Resource utilisation": {
+    "config12-long-med.xml": {
+      "atl": 100.0,
+      "ff": 69.39,
+      "bf": 66.87,
+      "fc": 100.0,
+      "fafc": 69.76
+    },
+    "config12-med-alt.xml": {
+      "atl": 100.0,
+      "ff": 66.93,
+      "bf": 63.88,
+      "fc": 98.41,
+      "fafc": 66.9
+    },
+    "config12-med-med.xml": {
+      "atl": 100.0,
+      "ff": 66.22,
+      "bf": 63.06,
+      "fc": 100.0,
+      "fafc": 66.29
+    },
+    "config12-short-med.xml": {
+      "atl": 100.0,
+      "ff": 61.56,
+      "bf": 58.46,
+      "fc": 100.0,
+      "fafc": 61.62
+    },
+    "config16-long-high.xml": {
+      "atl": 100.0,
+      "ff": 79.97,
+      "bf": 74.7,
+      "fc": 95.73,
+      "fafc": 79.98
+    },
+    "config16-long-med.xml": {
+      "atl": 100.0,
+      "ff": 68.16,
+      "bf": 64.71,
+      "fc": 90.22,
+      "fafc": 68.35
+    },
+    "config16-med-high.xml": {
+      "atl": 100.0,
+      "ff": 77.45,
+      "bf": 73.06,
+      "fc": 92.9,
+      "fafc": 78.72
+    },
+    "config16-short-high.xml": {
+      "atl": 100.0,
+      "ff": 76.88,
+      "bf": 71.21,
+      "fc": 91.36,
+      "fafc": 78.62
+    },
+    "config16-short-med.xml": {
+      "atl": 100.0,
+      "ff": 66.22,
+      "bf": 62.42,
+      "fc": 88.37,
+      "fafc": 66.18
+    },
+    "config40-long-high.xml": {
+      "atl": 100.0,
+      "ff": 85.81,
+      "bf": 80.91,
+      "fc": 100.0,
+      "fafc": 87.62
+    },
+    "config40-long-med.xml": {
+      "atl": 100.0,
+      "ff": 72.16,
+      "bf": 67.37,
+      "fc": 100.0,
+      "fafc": 70.98
+    },
+    "config40-med-high.xml": {
+      "atl": 100.0,
+      "ff": 83.01,
+      "bf": 79.51,
+      "fc": 100.0,
+      "fafc": 84.45
+    },
+    "config40-med-med.xml": {
+      "atl": 100.0,
+      "ff": 72.77,
+      "bf": 65.83,
+      "fc": 100.0,
+      "fafc": 71.58
+    },
+    "config40-short-high.xml": {
+      "atl": 100.0,
+      "ff": 86.54,
+      "bf": 79.64,
+      "fc": 100.0,
+      "fafc": 87.22
+    },
+    "config40-short-med.xml": {
+      "atl": 100.0,
+      "ff": 77.23,
+      "bf": 71.66,
+      "fc": 100.0,
+      "fafc": 77.27
+    }
+  },
+  "Total rental cost": {
+    "config12-long-med.xml": {
+      "atl": 82.43,
+      "ff": 131.37,
+      "bf": 131.75,
+      "fc": 78.09,
+      "fafc": 132.04
+    },
+    "config12-med-alt.xml": {
+      "atl": 68.6,
+      "ff": 113.25,
+      "bf": 113.19,
+      "fc": 66.44,
+      "fafc": 113.25
+    },
+    "config12-med-med.xml": {
+      "atl": 78.18,
+      "ff": 132.82,
+      "bf": 133.01,
+      "fc": 74.66,
+      "fafc": 132.93
+    },
+    "config12-short-med.xml": {
+      "atl": 11.78,
+      "ff": 21.5,
+      "bf": 21.49,
+      "fc": 11.14,
+      "fafc": 21.5
+    },
+    "config16-long-high.xml": {
+      "atl": 467.3,
+      "ff": 589.16,
+      "bf": 596.1,
+      "fc": 477.25,
+      "fafc": 583.5
+    },
+    "config16-long-med.xml": {
+      "atl": 378.91,
+      "ff": 581.93,
+      "bf": 581.49,
+      "fc": 417.64,
+      "fafc": 582.39
+    },
+    "config16-med-high.xml": {
+      "atl": 461.93,
+      "ff": 598.42,
+      "bf": 598.83,
+      "fc": 477.74,
+      "fafc": 578.73
+    },
+    "config16-short-high.xml": {
+      "atl": 511.23,
+      "ff": 594.1,
+      "bf": 612.4,
+      "fc": 481.01,
+      "fafc": 580.47
+    },
+    "config16-short-med.xml": {
+      "atl": 427.5,
+      "ff": 579.43,
+      "bf": 578.62,
+      "fc": 404.17,
+      "fafc": 579.52
+    },
+    "config40-long-high.xml": {
+      "atl": 933.61,
+      "ff": 1244.09,
+      "bf": 1236.91,
+      "fc": 951.07,
+      "fafc": 1232.8
+    },
+    "config40-long-med.xml": {
+      "atl": 607.99,
+      "ff": 1025.57,
+      "bf": 967.53,
+      "fc": 627.51,
+      "fafc": 1095.07
+    },
+    "config40-med-high.xml": {
+      "atl": 458.34,
+      "ff": 614.35,
+      "bf": 602.11,
+      "fc": 450.57,
+      "fafc": 600.52
+    },
+    "config40-med-med.xml": {
+      "atl": 301.25,
+      "ff": 482.74,
+      "bf": 498.49,
+      "fc": 296.0,
+      "fafc": 487.84
+    },
+    "config40-short-high.xml": {
+      "atl": 502.9,
+      "ff": 600.37,
+      "bf": 612.79,
+      "fc": 468.88,
+      "fafc": 592.86
+    },
+    "config40-short-med.xml": {
+      "atl": 368.85,
+      "ff": 586.94,
+      "bf": 587.55,
+      "fc": 381.87,
+      "fafc": 587.31
+    }
+  }
+}
